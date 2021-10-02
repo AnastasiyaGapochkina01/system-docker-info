@@ -1,0 +1,34 @@
+---
+  - name: Create folder
+    file:
+      path: /opt/container/nginx
+      state: directory
+      mode: '0755'
+    
+  - name: Copy files
+    copy:
+      src: ./files/{{ item }}
+      dest: /opt/container/nginx
+      mode: u+x
+    loop: ['get_param.py', 'template.html'] 
+
+  - name: Copy Dockerfile
+    copy:
+      src: ./files/{{ item }}
+      dest: /opt/container
+      mode: '0755'
+    loop: ['Dockerfile', 'param.conf']
+
+  - name: Build custom nginx container
+    shell: docker build -t custom_nginx /opt/container
+
+  - name: Run nginx container
+    docker_container:
+      name: nginx
+      image: custom_nginx
+      ports:
+        - "80:80"
+      recreate: yes
+
+  - name: Run nginx -t for test
+    shell: docker exec nginx nginx -t
