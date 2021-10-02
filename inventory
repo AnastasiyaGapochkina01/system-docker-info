@@ -1,0 +1,5 @@
+[test-host]
+192.168.56.103
+
+[test-host:vars]
+ansible_python_interpreter=/usr/bin/python3

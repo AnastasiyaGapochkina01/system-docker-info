@@ -1,0 +1,59 @@
+---
+- hosts: all
+  become: true
+
+  tasks:
+    - name: Install required packages
+      apt: name={{ item }} state=latest update_cache=yes force_apt_get=yes
+      loop: ['apt-transport-https', 'ca-certificates', 'curl', 'software-properties-common', 'gnupg', 'python3-pip', 'python3-setuptools']
+
+    - name: Add Docker GPG key
+      apt_key:
+        url: https://download.docker.com/linux/debian/gpg
+        state: present
+
+    - name: Add Docker repo
+      apt_repository:
+        repo: deb https://download.docker.com/linux/debian stretch stable
+        state: present
+
+    - name: Install Docker
+      apt: update_cache=yes name=docker-ce state=latest
+
+    - name: Install python module to Docker
+      pip:
+        name: docker
+
+    - name: Create folder
+      file:
+        path: /opt/container/nginx
+        state: directory
+        mode: '0755'
+    
+    - name: Copy files
+      copy:
+        src: ./files/{{ item }}
+        dest: /opt/container/nginx
+        mode: u+x
+      loop: ['get_param.py', 'template.html'] 
+
+    - name: Copy Dockerfile
+      copy:
+        src: ./files/{{ item }}
+        dest: /opt/container
+        mode: '0755'
+      loop: ['Dockerfile', 'param.conf']
+
+    - name: Build custom nginx container
+      shell: docker build -t custom_nginx /opt/container
+
+    - name: Run nginx container
+      docker_container:
+        name: nginx
+        image: custom_nginx
+        ports:
+          - "80:80"
+        recreate: yes
+
+    - name: Run nginx -t for test
+      shell: docker exec nginx nginx -t
