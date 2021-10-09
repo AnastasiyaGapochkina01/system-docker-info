@@ -8,4 +8,3 @@ COPY ./nginx .
 COPY ./param.conf /etc/nginx/conf.d
 
 RUN python3 get_param.py
-#CMD ["python3", "get_param.py"] #заставить ЭТО работать (не выполянется скрипт)
